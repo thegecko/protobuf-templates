@@ -23,14 +23,14 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-const protobufjs_1 = require("protobufjs");
-const path_1 = require("path");
-const fs_1 = require("fs");
-const through2_1 = require("through2");
-const BufferStreams = require("bufferstreams");
-const handlebars_1 = require("handlebars");
+var protobufjs_1 = require("protobufjs");
+var path_1 = require("path");
+var fs_1 = require("fs");
+var through2_1 = require("through2");
+var BufferStreams = require("bufferstreams");
+var handlebars_1 = require("handlebars");
 // const PLUGIN_NAME = "grpc-typescript";
-const TEMPLATE_EXT = ".hbs";
+var TEMPLATE_EXT = ".hbs";
 function jsType(protoType) {
     switch (protoType) {
         case "string":
@@ -55,45 +55,46 @@ function jsType(protoType) {
     }
     return null;
 }
-handlebars_1.registerHelper("memberType", (field, options) => {
+handlebars_1.registerHelper("memberType", function (field, options) {
     // Check for known JS types
-    let type = jsType(field.type);
+    var type = jsType(field.type);
     // If not a known type, assume it's a custom type in the namespace
     if (!type)
-        type = `${options.data._parent.key}.${field.type}`;
+        type = options.data._parent.key + "." + field.type;
     // Array
     if (field.rule === "repeated")
         type += "[]";
     // Maps
     else if (field.keyType)
-        type = `{ [key: ${jsType(field.keyType)}]: ${type} }`;
+        type = "{ [key: " + jsType(field.keyType) + "]: " + type + " }";
     return type;
 });
 function findTemplate(path, ext) {
-    const known = path_1.resolve(__dirname, "..", "templates", `${path}-${ext}${TEMPLATE_EXT}`);
+    var known = path_1.resolve(__dirname, "..", "templates", path + "-" + ext + TEMPLATE_EXT);
     if (fs_1.existsSync(known))
         return known;
     if (fs_1.existsSync(path))
         return path;
-    if (!path.endsWith(TEMPLATE_EXT))
+    if (path.slice(-TEMPLATE_EXT.length) !== TEMPLATE_EXT)
         path += TEMPLATE_EXT;
     if (fs_1.existsSync(path))
         return path;
     return null;
 }
-module.exports = ({ template = "interface", type = "typescript", keepCase = false }) => {
-    return through2_1.obj((file, _enc, callback) => {
-        const ext = type === "typescript" ? "ts" : "js";
-        const path = findTemplate(template, ext);
+module.exports = function (_a) {
+    var _b = _a === void 0 ? {} : _a, _c = _b.template, template = _c === void 0 ? "interface" : _c, _d = _b.type, type = _d === void 0 ? "typescript" : _d, _e = _b.keepCase, keepCase = _e === void 0 ? false : _e;
+    return through2_1.obj(function (file, _enc, callback) {
+        var ext = type === "typescript" ? "ts" : "js";
+        var path = findTemplate(template, ext);
         if (!path)
-            return callback(`template not found: ${template}`);
+            return callback("template not found: " + template);
         function createJson(contents) {
-            const root = new protobufjs_1.Root();
-            protobufjs_1.parse(contents, root, { keepCase });
-            const json = JSON.stringify(root, null, 2);
+            var root = new protobufjs_1.Root();
+            protobufjs_1.parse(contents, root, { keepCase: keepCase });
+            var json = JSON.stringify(root, null, 2);
             // Load and compile template
-            const compiled = handlebars_1.compile(fs_1.readFileSync(path, "utf8"));
-            let results = compiled(JSON.parse(json));
+            var compiled = handlebars_1.compile(fs_1.readFileSync(path, "utf8"));
+            var results = compiled(JSON.parse(json));
             // Ensure single blank lines
             results = results.replace(/[\n\r]{2,}/gm, "\n\n");
             // Ensure no spaces on empty lines
@@ -107,18 +108,18 @@ module.exports = ({ template = "interface", type = "typescript", keepCase = fals
         if (file.isBuffer()) {
             // File
             file.contents = createJson(file.contents);
-            const fileName = `${path_1.basename(file.path, path_1.extname(file.path))}.${ext}`;
+            var fileName = path_1.basename(file.path, path_1.extname(file.path)) + "." + ext;
             file.path = path_1.join(path_1.dirname(file.path), fileName);
         }
         else if (file.isStream()) {
             // Stream
-            const bufferStream = new BufferStreams((_err, buffer, cb) => {
-                const results = createJson(buffer.toString("utf8"));
+            var bufferStream = new BufferStreams(function (_err, buffer, cb) {
+                var results = createJson(buffer.toString("utf8"));
                 cb(null, results);
                 // if (err) this.emit('error', err);
             });
             file.contents = file.contents.pipe(bufferStream);
-            const fileName = `${path_1.basename(file.path, path_1.extname(file.path))}.${ext}`;
+            var fileName = path_1.basename(file.path, path_1.extname(file.path)) + "." + ext;
             file.path = path_1.join(path_1.dirname(file.path), fileName);
         }
         else {
