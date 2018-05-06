@@ -90,7 +90,7 @@ export = ({
     template = "interface",
     type = "typescript",
     keepCase = false
-}: Options): Transform => {
+}: Options = {}): Transform => {
 
     return through((file, _enc, callback) => {
 
