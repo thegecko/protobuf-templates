@@ -1,0 +1,69 @@
+/**
+ * This file is auto-generated, do not edit
+ */
+{{#*inline "selector"}}
+{{#each nested}}
+{{#if fields}}
+{{> type }}
+{{else if methods}}
+{{> service }}
+{{else if values}}
+{{> enum }}
+{{else}}
+{{> namespace }}
+{{/if}}
+{{/each}}
+{{/inline}}
+{{#*inline "type"}}
+/**
+ * Properties of a {{@key}} message
+ */
+export interface {{@key}} {
+{{#each fields}}
+    /**
+     * {{@key}}
+     */
+    {{@key}}: {{memberType this}};
+{{/each}}
+}
+{{#if nested}}
+/**
+ * Namespace {{@key}}
+ */
+export namespace {{@key}} {
+    {{> selector }}
+}
+{{/if}}
+{{/inline}}
+{{#*inline "service"}}
+/**
+ * Represents a {{@key}} service
+ */
+export interface {{@key}} {
+{{#each methods}}
+    /**
+     * Calls {{@key}}
+     * @param request {{this.requestType}} message or plain object
+     * @param callback Node-style callback called with the error, if any, {{this.responseType}}
+     */
+    {{@key}}(request: {{this.requestType}}, callback: (error: Error|null, response?: {{this.responseType}}) => void ): void;
+{{/each}}
+}
+{{> selector }}
+{{/inline}}
+{{#*inline "enum"}}
+enum: {{@key}}
+{{#each values}}
+    value: {{@key}}
+{{/each}}
+{{> selector }}
+{{/inline}}
+{{#*inline "namespace"}}
+/**
+ * Namespace {{@key}}
+ */
+export namespace {{@key}} {
+    {{> selector }}
+}
+{{/inline}}
+{{> selector }}
