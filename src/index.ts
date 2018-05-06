@@ -1,27 +1,27 @@
 /*
-* grpc-typescript
-* Copyright (c) 2018 Rob Moran
-*
-* The MIT License (MIT)
-*
-* Permission is hereby granted, free of charge, to any person obtaining a copy
-* of this software and associated documentation files (the "Software"), to deal
-* in the Software without restriction, including without limitation the rights
-* to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-* copies of the Software, and to permit persons to whom the Software is
-* furnished to do so, subject to the following conditions:
-*
-* The above copyright notice and this permission notice shall be included in all
-* copies or substantial portions of the Software.
-*
-* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-* IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-* FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-* AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-* LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-* OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-* SOFTWARE.
-*/
+ * protobuf-templates
+ * Copyright (c) 2018 Rob Moran
+ *
+ * The MIT License (MIT)
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
 
 import { parse, Root } from "protobufjs";
 import { resolve, basename, extname, join, dirname } from "path";
@@ -32,6 +32,9 @@ import { Transform } from "stream";
 import * as BufferStreams from "bufferstreams";
 import { registerHelper, compile } from "handlebars";
 import { Options } from "./options";
+
+// const PLUGIN_NAME = "grpc-typescript";
+const TEMPLATE_EXT = ".hbs";
 
 function jsType(protoType: string): string {
     switch (protoType) {
@@ -55,7 +58,6 @@ function jsType(protoType: string): string {
         case "sfixed64":
             return "number";
     }
-
     return null;
 }
 
@@ -75,9 +77,6 @@ registerHelper("memberType", (field, options) => {
     return type;
 });
 
-// const PLUGIN_NAME = "grpc-typescript";
-const TEMPLATE_EXT = ".hbs";
-
 function findTemplate(path: string, ext: string) {
     const known = resolve(__dirname, "..", "templates", `${path}-${ext}${TEMPLATE_EXT}`);
     if (existsSync(known)) return known;
@@ -88,7 +87,7 @@ function findTemplate(path: string, ext: string) {
 }
 
 export = ({
-    template = "client",
+    template = "interface",
     type = "typescript",
     keepCase = false
 }: Options): Transform => {
@@ -104,21 +103,16 @@ export = ({
             const root = new Root();
             parse(contents, root, { keepCase });
             const json = JSON.stringify(root, null, 2);
-            // tslint:disable-next-line:no-console
-            console.log(json);
 
             // Load and compile template
-            const compiled = compile(readFileSync(path, "utf8"), {
-//                preventIndent: true
-            });
-            // const compiled = dot.template(readFileSync(path, "utf8"));
+            const compiled = compile(readFileSync(path, "utf8"));
             let results = compiled(JSON.parse(json));
 
             // Ensure single blank lines
             results = results.replace(/[\n\r]{2,}/gm, "\n\n");
             // Ensure no spaces on empty lines
             results = results.replace(/^\s+$/gm, "");
-//            results = results.replace(/^[\n\r\t\s]+$/g, "\n");
+
             return results;
         }
 
@@ -147,8 +141,5 @@ export = ({
         }
 
         callback(null, file);
-
-        // tslint:disable-next-line:no-console
-        // console.log(root);
     });
 };

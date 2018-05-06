@@ -1,24 +1,27 @@
 {
   "private": true,
-  "name": "grpc-typescript",
+  "name": "protobuf-templates",
   "version": "1.0.0",
-  "description": "Gulp task for the protobufjs pbjs and pbts tools",
-  "homepage": "https://github.com/thegecko/gulp-protobuf",
+  "description": "Generate TypeScript code from proto files",
+  "homepage": "https://github.com/thegecko/protobuf-templates",
   "author": "Rob Moran <rob@thegecko.org>",
   "license": "MIT",
   "types": "./types/index.d.ts",
   "main": "./dist/index.js",
   "repository": {
     "type": "git",
-    "url": "git://github.com/thegecko/gulp-protobuf.git"
+    "url": "git://github.com/thegecko/protobuf-templates.git"
   },
   "keywords": [
-    "gulp",
     "protobuf",
     "proto",
     "protoc",
     "protobufjs",
-    "typescript"
+    "template",
+    "templates",
+    "typescript",
+    "ts",
+    "gulp"
   ],
   "scripts": {
     "gulp": "gulp"
