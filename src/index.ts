@@ -33,15 +33,14 @@ import * as BufferStreams from "bufferstreams";
 import { registerHelper, compile } from "handlebars";
 import { Options } from "./options";
 
-registerHelper("memberType", (field, options) => {
-    let type = `${options.data._parent.key}.${field.type}`;
-    switch (field.type) {
+function jsType(protoType: string): string {
+    switch (protoType) {
         case "string":
-            type = "string";
+            return "string";
         case "bool":
-            type = "boolean";
+            return "boolean";
         case "bytes":
-            type = "Uint8Array";
+            return "Uint8Array";
         case "double":
         case "float":
         case "int32":
@@ -54,10 +53,25 @@ registerHelper("memberType", (field, options) => {
         case "fixed64":
         case "sfixed32":
         case "sfixed64":
-            type = "number";
+            return "number";
     }
 
+    return null;
+}
+
+registerHelper("memberType", (field, options) => {
+    // Check for known JS types
+    let type = jsType(field.type);
+
+    // If not a known type, assume it's a custom type in the namespace
+    if (!type) type = `${options.data._parent.key}.${field.type}`;
+
+    // Array
     if (field.rule === "repeated") type += "[]";
+
+    // Maps
+    else if (field.keyType) type = `{ [key: ${jsType(field.keyType)}]: ${type} }`;
+
     return type;
 });
 
@@ -98,7 +112,14 @@ export = ({
 //                preventIndent: true
             });
             // const compiled = dot.template(readFileSync(path, "utf8"));
-            return compiled(JSON.parse(json));
+            let results = compiled(JSON.parse(json));
+
+            // Ensure single blank lines
+            results = results.replace(/[\n\r]{2,}/gm, "\n\n");
+            // Ensure no spaces on empty lines
+            results = results.replace(/^\s+$/gm, "");
+//            results = results.replace(/^[\n\r\t\s]+$/g, "\n");
+            return results;
         }
 
         if (file.isNull()) {

@@ -1,6 +1,7 @@
 /**
  * This file is auto-generated, do not edit
  */
+
 {{#*inline "selector"}}
 {{#each nested}}
 {{#if fields}}
@@ -14,19 +15,23 @@
 {{/if}}
 {{/each}}
 {{/inline}}
+
 {{#*inline "type"}}
+
 /**
  * Properties of a {{@key}} message
  */
 export interface {{@key}} {
 {{#each fields}}
+
     /**
      * {{@key}}
      */
-    {{@key}}: {{memberType this}};
+    {{@key}}?: {{memberType this}};
 {{/each}}
 }
 {{#if nested}}
+
 /**
  * Namespace {{@key}}
  */
@@ -35,12 +40,15 @@ export namespace {{@key}} {
 }
 {{/if}}
 {{/inline}}
+
 {{#*inline "service"}}
+
 /**
  * Represents a {{@key}} service
  */
 export interface {{@key}} {
 {{#each methods}}
+
     /**
      * Calls {{@key}}
      * @param request {{this.requestType}} message or plain object
@@ -51,14 +59,18 @@ export interface {{@key}} {
 }
 {{> selector }}
 {{/inline}}
+
 {{#*inline "enum"}}
+
 enum: {{@key}}
 {{#each values}}
     value: {{@key}}
 {{/each}}
 {{> selector }}
 {{/inline}}
+
 {{#*inline "namespace"}}
+
 /**
  * Namespace {{@key}}
  */
@@ -66,4 +78,5 @@ export namespace {{@key}} {
     {{> selector }}
 }
 {{/inline}}
+
 {{> selector }}
