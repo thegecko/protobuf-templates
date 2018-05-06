@@ -81,7 +81,7 @@ function findTemplate(path: string, ext: string) {
     const known = resolve(__dirname, "..", "templates", `${path}-${ext}${TEMPLATE_EXT}`);
     if (existsSync(known)) return known;
     if (existsSync(path)) return path;
-    if (!path.endsWith(TEMPLATE_EXT)) path += TEMPLATE_EXT;
+    if (path.slice(-TEMPLATE_EXT.length) !== TEMPLATE_EXT) path += TEMPLATE_EXT;
     if (existsSync(path)) return path;
     return null;
 }
