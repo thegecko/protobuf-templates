@@ -21,6 +21,10 @@
 /**
  * Properties of a {{@key}} message
  */
+{{#each fields}}
+{{else}}
+// tslint:disable-next-line:no-empty-interface
+{{/each}}
 export interface {{@key}} {
 {{#each fields}}
 
@@ -46,6 +50,10 @@ export namespace {{@key}} {
 /**
  * Represents a {{@key}} service
  */
+{{#each methods}}
+{{else}}
+// tslint:disable-next-line:no-empty-interface
+{{/each}}
 export interface {{@key}} {
 {{#each methods}}
 
@@ -65,6 +73,10 @@ export interface {{@key}} {
 /**
  * {{@key}} enum
  */
+{{#each values}}
+{{else}}
+// tslint:disable-next-line:no-empty-interface
+{{/each}}
 export enum {{@key}} {
 {{#each values}}
     {{@key}} = {{this}},
