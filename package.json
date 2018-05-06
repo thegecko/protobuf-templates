@@ -1,5 +1,4 @@
 {
-  "private": true,
   "name": "protobuf-templates",
   "version": "1.0.0",
   "description": "Generate TypeScript code from proto files",
