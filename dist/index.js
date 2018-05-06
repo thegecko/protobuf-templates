@@ -31,6 +31,7 @@ var BufferStreams = require("bufferstreams");
 var handlebars_1 = require("handlebars");
 // const PLUGIN_NAME = "grpc-typescript";
 var TEMPLATE_EXT = ".hbs";
+var KNOWN_PREFIX = "google.protobuf.";
 function jsType(protoType) {
     switch (protoType) {
         case "string":
@@ -52,7 +53,19 @@ function jsType(protoType) {
         case "sfixed32":
         case "sfixed64":
             return "number";
+        case "Any":
+        case "Timestamp":
+        case "Duration":
+        case "Struct":
+        case "Wrapper":
+        case "FieldMask":
+        case "ListValue":
+        case "Value":
+        case "NullValue":
+            return "" + KNOWN_PREFIX + protoType;
     }
+    if (protoType.substr(0, KNOWN_PREFIX.length) === KNOWN_PREFIX)
+        return protoType;
     return null;
 }
 handlebars_1.registerHelper("memberType", function (field, options) {
@@ -88,9 +101,8 @@ module.exports = function (_a) {
         var path = findTemplate(template, ext);
         if (!path)
             return callback("template not found: " + template);
-        function createJson(contents) {
-            var root = new protobufjs_1.Root();
-            protobufjs_1.parse(contents, root, { keepCase: keepCase });
+        var root = new protobufjs_1.Root();
+        function createOutput() {
             var json = JSON.stringify(root, null, 2);
             // Load and compile template
             var compiled = handlebars_1.compile(fs_1.readFileSync(path, "utf8"));
@@ -107,14 +119,26 @@ module.exports = function (_a) {
         }
         if (file.isBuffer()) {
             // File
-            file.contents = createJson(file.contents);
+            root.loadSync(file.path, { keepCase: keepCase }).resolveAll();
+            file.contents = Buffer.from(createOutput());
             var fileName = path_1.basename(file.path, path_1.extname(file.path)) + "." + ext;
             file.path = path_1.join(path_1.dirname(file.path), fileName);
         }
         else if (file.isStream()) {
             // Stream
             var bufferStream = new BufferStreams(function (_err, buffer, cb) {
-                var results = createJson(buffer.toString("utf8"));
+                var contents = buffer.toString("utf8");
+                var parsed = protobufjs_1.parse(contents, root, { keepCase: keepCase });
+                // Load known types
+                if (parsed.imports) {
+                    parsed.imports.forEach(function (imported) {
+                        if (protobufjs_1.common[imported]) {
+                            // tslint:disable-next-line:no-string-literal
+                            root.setOptions(protobufjs_1.common[imported].options)["addJSON"](protobufjs_1.common[imported].nested);
+                        }
+                    });
+                }
+                var results = createOutput();
                 cb(null, results);
                 // if (err) this.emit('error', err);
             });
