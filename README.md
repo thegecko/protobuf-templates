@@ -58,6 +58,16 @@ keepCase                Keeps field casing instead of converting to camel case
 
 ## Implementation Status
 
+### Templates
+
+- [x] TypeScript interface
+- [ ] TypeScript client class
+- [ ] TypeScript abstract server class
+- [ ] JavaScript client class
+- [ ] JavaScript abstract server class
+
+### Types
+
 The library currently supports all of the proto3 [scalar types](https://developers.google.com/protocol-buffers/docs/proto3#scalar), [enums](https://developers.google.com/protocol-buffers/docs/proto#enum), [maps](https://developers.google.com/protocol-buffers/docs/proto3#maps), [nested types](https://developers.google.com/protocol-buffers/docs/proto3#nested) and [packages](https://developers.google.com/protocol-buffers/docs/proto3#packages).
 
 - [x] package (namespaces)
