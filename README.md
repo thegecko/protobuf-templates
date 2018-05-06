@@ -71,9 +71,10 @@ The library currently supports all of the proto3 [scalar types](https://develope
 - [x] enums 
 - [x] map
 - [x] Nested Types
-- [ ] google.protobuf.Any
-- [ ] google.protobuf.Timestamp
-- [ ] google.protobuf.Duration
+- [x] google.protobuf.Any
+- [x] google.protobuf.Timestamp
+- [x] google.protobuf.Duration
+- [x] google.protobuf.Empty
 - [ ] google.protobuf.Struct
 - [ ] google.protobuf.Wrapper
 - [ ] google.protobuf.FieldMask

@@ -23,7 +23,7 @@
  * SOFTWARE.
  */
 
-import { parse, Root } from "protobufjs";
+import { parse, Root, common } from "protobufjs";
 import { resolve, basename, extname, join, dirname } from "path";
 import { existsSync, readFileSync } from "fs";
 import { obj as through } from "through2";
@@ -35,6 +35,7 @@ import { Options } from "./options";
 
 // const PLUGIN_NAME = "grpc-typescript";
 const TEMPLATE_EXT = ".hbs";
+const KNOWN_PREFIX = "google.protobuf.";
 
 function jsType(protoType: string): string {
     switch (protoType) {
@@ -57,7 +58,20 @@ function jsType(protoType: string): string {
         case "sfixed32":
         case "sfixed64":
             return "number";
+        case "Any":
+        case "Timestamp":
+        case "Duration":
+        case "Struct":
+        case "Wrapper":
+        case "FieldMask":
+        case "ListValue":
+        case "Value":
+        case "NullValue":
+            return `${KNOWN_PREFIX}${protoType}`;
     }
+
+    if (protoType.substr(0, KNOWN_PREFIX.length) === KNOWN_PREFIX) return protoType;
+
     return null;
 }
 
@@ -99,9 +113,9 @@ export = ({
         const path = findTemplate(template, ext);
         if (!path) return callback(`template not found: ${template}`);
 
-        function createJson(contents) {
-            const root = new Root();
-            parse(contents, root, { keepCase });
+        const root = new Root();
+
+        function createOutput() {
             const json = JSON.stringify(root, null, 2);
 
             // Load and compile template
@@ -123,13 +137,28 @@ export = ({
 
         if (file.isBuffer()) {
             // File
-            file.contents = createJson(file.contents);
+            root.loadSync(file.path, { keepCase }).resolveAll();
+            file.contents = Buffer.from(createOutput());
+
             const fileName = `${basename(file.path, extname(file.path))}.${ext}`;
             file.path = join(dirname(file.path), fileName);
         } else if (file.isStream()) {
             // Stream
             const bufferStream = new BufferStreams((_err, buffer, cb) => {
-                const results = createJson(buffer.toString("utf8"));
+                const contents = buffer.toString("utf8");
+                const parsed = parse(contents, root, { keepCase });
+
+                // Load known types
+                if (parsed.imports) {
+                    parsed.imports.forEach(imported => {
+                        if (common[imported]) {
+                            // tslint:disable-next-line:no-string-literal
+                            root.setOptions(common[imported].options)["addJSON"](common[imported].nested);
+                        }
+                    });
+                }
+
+                const results = createOutput();
                 cb(null, results);
                 // if (err) this.emit('error', err);
             });
