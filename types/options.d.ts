@@ -2,7 +2,7 @@ export interface Options {
     /**
      * The template to use, defaults to "interface"
      */
-    template?: "interface";
+    template?: "interface" | "server";
     /**
      * The target language to use, defaults to "typescript"
      */

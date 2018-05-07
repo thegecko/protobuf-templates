@@ -16,6 +16,39 @@
 {{/each}}
 {{/inline}}
 
+{{#*inline "namespace"}}
+
+/**
+ * Namespace {{@key}}
+ */
+export namespace {{@key}} {
+    {{> selector }}
+}
+{{/inline}}
+
+{{#*inline "service"}}
+
+/**
+ * Represents a {{@key}} service
+ */
+{{#each methods}}
+{{else}}
+// tslint:disable-next-line:no-empty-interface
+{{/each}}
+export interface {{@key}} {
+{{#each methods}}
+
+    /**
+     * Calls {{@key}}
+     * @param request {{this.requestType}} message or plain object
+     * @param callback Node-style callback called with the error, if any, {{this.responseType}}
+     */
+    {{@key}}(request: {{this.requestType}}, callback: (error: Error|null, response?: {{this.responseType}}) => void): void;
+{{/each}}
+}
+{{> selector }}
+{{/inline}}
+
 {{#*inline "type"}}
 
 /**
@@ -45,29 +78,6 @@ export namespace {{@key}} {
 {{/if}}
 {{/inline}}
 
-{{#*inline "service"}}
-
-/**
- * Represents a {{@key}} service
- */
-{{#each methods}}
-{{else}}
-// tslint:disable-next-line:no-empty-interface
-{{/each}}
-export interface {{@key}} {
-{{#each methods}}
-
-    /**
-     * Calls {{@key}}
-     * @param request {{this.requestType}} message or plain object
-     * @param callback Node-style callback called with the error, if any, {{this.responseType}}
-     */
-    {{@key}}(request: {{this.requestType}}, callback: (error: Error|null, response?: {{this.responseType}}) => void ): void;
-{{/each}}
-}
-{{> selector }}
-{{/inline}}
-
 {{#*inline "enum"}}
 
 /**
@@ -81,17 +91,6 @@ export enum {{@key}} {
 {{#each values}}
     {{@key}} = {{this}},
 {{/each}}
-}
-{{> selector }}
-{{/inline}}
-
-{{#*inline "namespace"}}
-
-/**
- * Namespace {{@key}}
- */
-export namespace {{@key}} {
-    {{> selector }}
 }
 {{/inline}}
 
