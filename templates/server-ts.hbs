@@ -370,7 +370,11 @@ export class {{@key}} {
     /**
      * {{@key}}
      */
+{{#is rule "repeated"}}
+    public {{@key}}?: {{memberType this}}[];
+{{else}}
     public {{@key}}?: {{memberType this}};
+{{/is}}
 {{/each}}
 
     /**
@@ -380,17 +384,69 @@ export class {{@key}} {
      * @returns Writer
      */
     public static encode(message: {{@key}}, writer?: Writer): Writer {
+    {{#each fields}}
+    {{#is rule "repeated"}}
+        if (message.{{@key}} !== null && message.{{@key}}.length) {
+            for (const item of message.newMessages) {
+            {{#isScalar this}}
+                writer.{{this.type}}(item);
+            {{else}}
+                {{memberType this}}.encode(item, writer);
+            {{/isScalar}}
+            }
+        }
+    {{else}}
+        if (message.{{@key}} !== null && message.hasOwnProperty("{{@key}}")) {
+        {{#isScalar this}}
+            writer.{{this.type}}(message.{{@key}});
+        {{else}}
+            {{memberType this}}.encode(message.{{@key}}, writer);
+        {{/isScalar}}
+        }
+    {{/is}}
+    {{/each}}
+
+        return writer;
     }
 
     /**
      * Decodes a {{@key}} message from the specified reader or buffer
-     * @param reader Reader or buffer to decode from
-     * @param [length] Message length if known beforehand
+     * @param reader Reader to decode from
      * @returns {{@key}}
      * @throws {Error} If the payload is not a reader or valid buffer
      * @throws {$protobuf.util.ProtocolError} If required fields are missing
      */
-    public static decode(reader: (Reader|Uint8Array), length?: number): {{@key}} {
+    public static decode(reader: Reader): {{@key}} {
+        const message = new {{@key}}();
+        while (reader.pos < reader.len) {
+            const tag = reader.uint32();
+            switch (tag >>> 3) {
+            {{#each fields}}
+                case {{id}}:
+                {{#is rule "repeated"}}
+                    if (!(message.{{@key}} && message.{{@key}}.length)) {
+                        message.{{@key}} = [];
+                    }
+                {{#isScalar this}}
+                    message.{{@key}}.push(reader.{{type}}());
+                {{else}}
+                    message.{{@key}}.push({{memberType this}}.decode(reader));
+                {{/isScalar}}
+                {{else}}
+                {{#isScalar this}}
+                    message.{{@key}} = reader.{{type}}();
+                {{else}}
+                    {{memberType this}}.decode(reader);
+                {{/isScalar}}
+                {{/is}}
+                    break;
+            {{/each}}
+                default:
+                    reader.skipType(tag & 7);
+                    break;
+            }
+        }
+        return message;
     }
 }
 {{#if nested}}
