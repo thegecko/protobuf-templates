@@ -68,19 +68,55 @@ function jsType(protoType) {
         return protoType;
     return null;
 }
+// tslint:disable-next-line:only-arrow-functions
 handlebars_1.registerHelper("memberType", function (field, options) {
     // Check for known JS types
     var type = jsType(field.type);
     // If not a known type, assume it's a custom type in the namespace
     if (!type)
         type = options.data._parent.key + "." + field.type;
-    // Array
-    if (field.rule === "repeated")
-        type += "[]";
     // Maps
     else if (field.keyType)
         type = "{ [key: " + jsType(field.keyType) + "]: " + type + " }";
     return type;
+});
+// tslint:disable-next-line:only-arrow-functions
+handlebars_1.registerHelper("is", function (conditional, value, options) {
+    if (typeof conditional === "function") {
+        conditional = conditional.call(this);
+    }
+    if (typeof value === "function") {
+        value = value.call(this);
+    }
+    if (conditional !== value) {
+        return options.inverse(this);
+    }
+    else {
+        return options.fn(this);
+    }
+});
+// tslint:disable-next-line:only-arrow-functions
+handlebars_1.registerHelper("isScalar", function (field, options) {
+    var result = false;
+    switch (field.type) {
+        case "string":
+        case "bool":
+        case "bytes":
+        case "double":
+        case "float":
+        case "int32":
+        case "int64":
+        case "uint32":
+        case "uint64":
+        case "sint32":
+        case "sint64":
+        case "fixed32":
+        case "fixed64":
+        case "sfixed32":
+        case "sfixed64":
+            result = true;
+    }
+    return result ? options.fn(this) : options.inverse(this);
 });
 function findTemplate(path, ext) {
     var known = path_1.resolve(__dirname, "..", "templates", path + "-" + ext + TEMPLATE_EXT);

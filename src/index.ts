@@ -75,20 +75,61 @@ function jsType(protoType: string): string {
     return null;
 }
 
-registerHelper("memberType", (field, options) => {
+// tslint:disable-next-line:only-arrow-functions
+registerHelper("memberType", function(field, options) {
     // Check for known JS types
     let type = jsType(field.type);
 
     // If not a known type, assume it's a custom type in the namespace
     if (!type) type = `${options.data._parent.key}.${field.type}`;
 
-    // Array
-    if (field.rule === "repeated") type += "[]";
-
     // Maps
     else if (field.keyType) type = `{ [key: ${jsType(field.keyType)}]: ${type} }`;
 
     return type;
+});
+
+// tslint:disable-next-line:only-arrow-functions
+registerHelper("is", function(conditional, value, options) {
+    if (typeof conditional === "function") {
+        conditional = conditional.call(this);
+    }
+
+    if (typeof value === "function") {
+        value = value.call(this);
+    }
+
+    if (conditional !== value) {
+        return options.inverse(this);
+    } else {
+        return options.fn(this);
+    }
+});
+
+// tslint:disable-next-line:only-arrow-functions
+registerHelper("isScalar", function(field, options) {
+    let result = false;
+
+    switch (field.type) {
+        case "string":
+        case "bool":
+        case "bytes":
+        case "double":
+        case "float":
+        case "int32":
+        case "int64":
+        case "uint32":
+        case "uint64":
+        case "sint32":
+        case "sint64":
+        case "fixed32":
+        case "fixed64":
+        case "sfixed32":
+        case "sfixed64":
+            result = true;
+    }
+
+    return result ? options.fn(this) : options.inverse(this);
 });
 
 function findTemplate(path: string, ext: string) {
