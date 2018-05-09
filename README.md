@@ -61,16 +61,15 @@ keepCase                Keeps field casing instead of converting to camel case
 ### Templates
 
 - [x] TypeScript interface
+- [x] TypeScript abstract server class
 - [ ] TypeScript client class
-- [ ] TypeScript abstract server class
-- [ ] JavaScript client class
 - [ ] JavaScript abstract server class
+- [ ] JavaScript client class
 
 ### Types
 
-The library currently supports all of the proto3 [scalar types](https://developers.google.com/protocol-buffers/docs/proto3#scalar), [enums](https://developers.google.com/protocol-buffers/docs/proto#enum), [maps](https://developers.google.com/protocol-buffers/docs/proto3#maps), [nested types](https://developers.google.com/protocol-buffers/docs/proto3#nested) and [packages](https://developers.google.com/protocol-buffers/docs/proto3#packages).
+The library currently supports all of the proto3 [scalar types](https://developers.google.com/protocol-buffers/docs/proto3#scalar), [enums](https://developers.google.com/protocol-buffers/docs/proto#enum), [maps](https://developers.google.com/protocol-buffers/docs/proto3#maps) and [nested types](https://developers.google.com/protocol-buffers/docs/proto3#nested).
 
-- [x] package (namespaces)
 - [x] int32, fixed32, uint32
 - [x] int64, fixed64, uint64
 - [x] float, double
@@ -80,7 +79,7 @@ The library currently supports all of the proto3 [scalar types](https://develope
 - [x] repeated
 - [x] enums 
 - [x] map
-- [x] Nested Types
+- [x] nested types
 - [x] google.protobuf.Any
 - [x] google.protobuf.Timestamp
 - [x] google.protobuf.Duration
@@ -91,3 +90,10 @@ The library currently supports all of the proto3 [scalar types](https://develope
 - [ ] google.protobuf.ListValue
 - [ ] google.protobuf.Value
 - [ ] google.protobuf.NullValue
+
+### Features
+
+- [x] package (namespaces)
+- [x] default values
+- [ ] Any
+- [ ] Oneof

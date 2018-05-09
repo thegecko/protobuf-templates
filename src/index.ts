@@ -23,114 +23,21 @@
  * SOFTWARE.
  */
 
-import { parse, Root, common } from "protobufjs";
+import { parse, Root, common, Enum } from "protobufjs";
 import { resolve, basename, extname, join, dirname } from "path";
 import { existsSync, readFileSync } from "fs";
 import { obj as through } from "through2";
-// import * as PluginError from "plugin-error";
+import * as PluginError from "plugin-error";
 import { Transform } from "stream";
 import * as BufferStreams from "bufferstreams";
-import { registerHelper, compile } from "handlebars";
+import { compile } from "handlebars";
 import { Options } from "./options";
+import { registerHelpers } from "./helpers";
 
-// const PLUGIN_NAME = "grpc-typescript";
+const PLUGIN_NAME = "protobuf-templates";
 const TEMPLATE_EXT = ".hbs";
-const KNOWN_PREFIX = "google.protobuf.";
 
-function jsType(protoType: string): string {
-    switch (protoType) {
-        case "string":
-            return "string";
-        case "bool":
-            return "boolean";
-        case "bytes":
-            return "Uint8Array";
-        case "double":
-        case "float":
-        case "int32":
-        case "int64":
-        case "uint32":
-        case "uint64":
-        case "sint32":
-        case "sint64":
-        case "fixed32":
-        case "fixed64":
-        case "sfixed32":
-        case "sfixed64":
-            return "number";
-        case "Any":
-        case "Timestamp":
-        case "Duration":
-        case "Struct":
-        case "Wrapper":
-        case "FieldMask":
-        case "ListValue":
-        case "Value":
-        case "NullValue":
-            return `${KNOWN_PREFIX}${protoType}`;
-    }
-
-    if (protoType.substr(0, KNOWN_PREFIX.length) === KNOWN_PREFIX) return protoType;
-
-    return null;
-}
-
-// tslint:disable-next-line:only-arrow-functions
-registerHelper("memberType", function(field, options) {
-    // Check for known JS types
-    let type = jsType(field.type);
-
-    // If not a known type, assume it's a custom type in the namespace
-    if (!type) type = `${options.data._parent.key}.${field.type}`;
-
-    // Maps
-    else if (field.keyType) type = `{ [key: ${jsType(field.keyType)}]: ${type} }`;
-
-    return type;
-});
-
-// tslint:disable-next-line:only-arrow-functions
-registerHelper("is", function(conditional, value, options) {
-    if (typeof conditional === "function") {
-        conditional = conditional.call(this);
-    }
-
-    if (typeof value === "function") {
-        value = value.call(this);
-    }
-
-    if (conditional !== value) {
-        return options.inverse(this);
-    } else {
-        return options.fn(this);
-    }
-});
-
-// tslint:disable-next-line:only-arrow-functions
-registerHelper("isScalar", function(field, options) {
-    let result = false;
-
-    switch (field.type) {
-        case "string":
-        case "bool":
-        case "bytes":
-        case "double":
-        case "float":
-        case "int32":
-        case "int64":
-        case "uint32":
-        case "uint64":
-        case "sint32":
-        case "sint64":
-        case "fixed32":
-        case "fixed64":
-        case "sfixed32":
-        case "sfixed64":
-            result = true;
-    }
-
-    return result ? options.fn(this) : options.inverse(this);
-});
+registerHelpers();
 
 function findTemplate(path: string, ext: string) {
     const known = resolve(__dirname, "..", "templates", `${path}-${ext}${TEMPLATE_EXT}`);
@@ -139,6 +46,36 @@ function findTemplate(path: string, ext: string) {
     if (path.slice(-TEMPLATE_EXT.length) !== TEMPLATE_EXT) path += TEMPLATE_EXT;
     if (existsSync(path)) return path;
     return null;
+}
+
+function walkTree(item) {
+    if (item.nested) {
+        Object.keys(item.nested).forEach(key => {
+            walkTree(item.nested[key]);
+        });
+    }
+
+    if (item.fields) {
+        Object.keys(item.fields).forEach(key => {
+            const field = item.fields[key];
+            if (field.resolvedType) {
+
+                // Record the field's parent name
+                if (field.resolvedType.parent) {
+                    // Abuse the options object!
+                    if (!field.options) field.options = {};
+                    field.options.parent = field.resolvedType.parent.name;
+                }
+
+                // Record if the field is an enum
+                if (field.resolvedType instanceof Enum) {
+                    // Abuse the options object!
+                    if (!field.options) field.options = {};
+                    field.options.enum = true;
+                }
+            }
+        });
+    }
 }
 
 export = ({
@@ -157,6 +94,8 @@ export = ({
         const root = new Root();
 
         function createOutput() {
+            root.resolveAll();
+            walkTree(root);
             const json = JSON.stringify(root, null, 2);
 
             // Load and compile template
@@ -185,7 +124,9 @@ export = ({
             file.path = join(dirname(file.path), fileName);
         } else if (file.isStream()) {
             // Stream
-            const bufferStream = new BufferStreams((_err, buffer, cb) => {
+            const bufferStream = new BufferStreams((error, buffer, cb) => {
+                if (error) throw new PluginError(PLUGIN_NAME, error);
+
                 const contents = buffer.toString("utf8");
                 const parsed = parse(contents, root, { keepCase });
 
@@ -201,7 +142,6 @@ export = ({
 
                 const results = createOutput();
                 cb(null, results);
-                // if (err) this.emit('error', err);
             });
             file.contents = file.contents.pipe(bufferStream);
             const fileName = `${basename(file.path, extname(file.path))}.${ext}`;
