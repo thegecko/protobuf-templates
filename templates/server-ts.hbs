@@ -3,20 +3,12 @@
  */
 
 // tslint:disable:max-classes-per-file
+// tslint:disable:no-empty-interface
+// tslint:disable:no-empty
+// tslint:disable:variable-name
 
 /** Wire format reader using `Uint8Array` if available, otherwise `Array`. */
 export interface Reader {
-
-    /**
-     * Creates a new reader using the specified buffer.
-     * @param buffer Buffer to read from
-     * @returns A {@link BufferReader} if `buffer` is a Buffer, otherwise a {@link Reader}
-     * @throws {Error} If `buffer` is not a valid buffer
-     */
-    // static create(buffer: (Uint8Array|Buffer)): (Reader|BufferReader);
-
-    /** Read buffer. */
-    buf: Uint8Array;
 
     /** Read buffer position. */
     pos: number;
@@ -24,247 +16,41 @@ export interface Reader {
     /** Read buffer length. */
     len: number;
 
-    /**
-     * Reads a varint as an unsigned 32 bit value.
-     * @returns Value read
-     */
     uint32(): number;
-
-    /**
-     * Reads a varint as a signed 32 bit value.
-     * @returns Value read
-     */
     int32(): number;
-
-    /**
-     * Reads a zig-zag encoded varint as a signed 32 bit value.
-     * @returns Value read
-     */
     sint32(): number;
-
-    /**
-     * Reads a varint as a signed 64 bit value.
-     * @returns Value read
-     */
     int64(): number; // Long;
-
-    /**
-     * Reads a varint as an unsigned 64 bit value.
-     * @returns Value read
-     */
     uint64(): number; // Long;
-
-    /**
-     * Reads a zig-zag encoded varint as a signed 64 bit value.
-     * @returns Value read
-     */
     sint64(): number; // Long;
-
-    /**
-     * Reads a varint as a boolean.
-     * @returns Value read
-     */
     bool(): boolean;
-
-    /**
-     * Reads fixed 32 bits as an unsigned 32 bit integer.
-     * @returns Value read
-     */
     fixed32(): number;
-
-    /**
-     * Reads fixed 32 bits as a signed 32 bit integer.
-     * @returns Value read
-     */
     sfixed32(): number;
-
-    /**
-     * Reads fixed 64 bits.
-     * @returns Value read
-     */
     fixed64(): number; // Long;
-
-    /**
-     * Reads zig-zag encoded fixed 64 bits.
-     * @returns Value read
-     */
     sfixed64(): number; // Long;
-
-    /**
-     * Reads a float (32 bit) as a number.
-     * @returns Value read
-     */
     float(): number;
-
-    /**
-     * Reads a double (64 bit float) as a number.
-     * @returns Value read
-     */
     double(): number;
-
-    /**
-     * Reads a sequence of bytes preceeded by its length as a varint.
-     * @returns Value read
-     */
     bytes(): Uint8Array;
-
-    /**
-     * Reads a string preceeded by its byte length as a varint.
-     * @returns Value read
-     */
     string(): string;
-
-    /**
-     * Skips the specified number of bytes if specified, otherwise skips a varint.
-     * @param [length] Length if known, otherwise a varint is assumed
-     * @returns `this`
-     */
     skip(length?: number): Reader;
-
-    /**
-     * Skips the next element of the specified wire type.
-     * @param wireType Wire type received
-     * @returns `this`
-     */
     skipType(wireType: number): Reader;
 }
 
 /** Wire format writer using `Uint8Array` if available, otherwise `Array`. */
 export interface Writer {
-
-    /**
-     * Creates a new writer.
-     * @returns A {@link BufferWriter} when Buffers are supported, otherwise a {@link Writer}
-     */
-    // static create(): (BufferWriter|Writer);
-
-    /**
-     * Allocates a buffer of the specified size.
-     * @param size Buffer size
-     * @returns Buffer
-     */
-    // static alloc(size: number): Uint8Array;
-
-    /** Current length. */
-    len: number;
-
-    /** Operations head. */
-    head: object;
-
-    /** Operations tail */
-    tail: object;
-
-    /** Linked forked states. */
-    states: (object|null);
-
-    /**
-     * Writes an unsigned 32 bit value as a varint.
-     * @param value Value to write
-     * @returns `this`
-     */
     uint32(value: number): Writer;
-
-    /**
-     * Writes a signed 32 bit value as a varint.
-     * @param value Value to write
-     * @returns `this`
-     */
     int32(value: number): Writer;
-
-    /**
-     * Writes a 32 bit value as a varint, zig-zag encoded.
-     * @param value Value to write
-     * @returns `this`
-     */
     sint32(value: number): Writer;
-
-    /**
-     * Writes an unsigned 64 bit value as a varint.
-     * @param value Value to write
-     * @returns `this`
-     * @throws {TypeError} If `value` is a string and no long library is present.
-     */
     uint64(value: (number|string)): Writer; // Long;
-
-    /**
-     * Writes a signed 64 bit value as a varint.
-     * @param value Value to write
-     * @returns `this`
-     * @throws {TypeError} If `value` is a string and no long library is present.
-     */
     int64(value: (number|string)): Writer; // Long;
-
-    /**
-     * Writes a signed 64 bit value as a varint, zig-zag encoded.
-     * @param value Value to write
-     * @returns `this`
-     * @throws {TypeError} If `value` is a string and no long library is present.
-     */
     sint64(value: (number|string)): Writer; // Long;
-
-    /**
-     * Writes a boolish value as a varint.
-     * @param value Value to write
-     * @returns `this`
-     */
     bool(value: boolean): Writer;
-
-    /**
-     * Writes an unsigned 32 bit value as fixed 32 bits.
-     * @param value Value to write
-     * @returns `this`
-     */
     fixed32(value: number): Writer;
-
-    /**
-     * Writes a signed 32 bit value as fixed 32 bits.
-     * @param value Value to write
-     * @returns `this`
-     */
     sfixed32(value: number): Writer;
-
-    /**
-     * Writes an unsigned 64 bit value as fixed 64 bits.
-     * @param value Value to write
-     * @returns `this`
-     * @throws {TypeError} If `value` is a string and no long library is present.
-     */
     fixed64(value: (number|string)): Writer; // Long;
-
-    /**
-     * Writes a signed 64 bit value as fixed 64 bits.
-     * @param value Value to write
-     * @returns `this`
-     * @throws {TypeError} If `value` is a string and no long library is present.
-     */
     sfixed64(value: (number|string)): Writer; // Long;
-
-    /**
-     * Writes a float (32 bit).
-     * @param value Value to write
-     * @returns `this`
-     */
     float(value: number): Writer;
-
-    /**
-     * Writes a double (64 bit float).
-     * @param value Value to write
-     * @returns `this`
-     */
     double(value: number): Writer;
-
-    /**
-     * Writes a sequence of bytes.
-     * @param value Buffer or base64 encoded string to write
-     * @returns `this`
-     */
     bytes(value: (Uint8Array|string)): Writer;
-
-    /**
-     * Writes a string.
-     * @param value Value to write
-     * @returns `this`
-     */
     string(value: string): Writer;
 
     /**
@@ -273,12 +59,6 @@ export interface Writer {
      * @returns `this`
      */
     fork(): Writer;
-
-    /**
-     * Resets this instance to the last state.
-     * @returns `this`
-     */
-    reset(): Writer;
 
     /**
      * Resets to the last state and appends the fork state's current write length as a varint followed by its operations.
@@ -322,34 +102,39 @@ export namespace {{@key}} {
 /**
  * Represents a {{@key}} service
  */
-{{#each methods}}
-{{else}}
+{{#empty methods}}
 // tslint:disable-next-line:no-empty-interface
-{{/each}}
+{{/empty}}
 export abstract class {{@key}} {
 
-    private _methods = null;
+    /**
+     * {{@key}} Constructor
+     * @param readerFactory Function to return a Reader object similar to protobufjs.Reader
+     * @param writerFactory Function to return a Writer object similar to protobufjs.Writer
+     */
+    constructor(private readerFactory: (bytes: Uint8Array) => Reader, private writerFactory: () => Writer) {
+    }
 
     /**
-     * Calls {{@key}}
-     * @param request {{this.requestType}} message or plain object
-     * @param callback Node-style callback called with the error, if any, {{this.responseType}}
+     * Handle incoming rpc messages
+     * @param methodName The method to invoke
+     * @param bytes The encoded protobuf message
+     * @param callback Node-style callback function returned with an encoded protobuf response
      */
-    constructor(private _reader: Reader, private _writer: Writer) {
-        this._methods = {
+    public rpcHandler(methodName: {{#each methods}}"{{@key}}"{{#unless @last}} | {{/unless}}{{/each}}, bytes: Uint8Array, callback?: (error: Error, response?: Uint8Array) => void): void {
+        switch (methodName) {
         {{#each methods}}
-            {{@key}}: { req: null, res: null },
+            case "{{@key}}":
+                this.{{@key}}({{this.requestType}}.decode(this.readerFactory(bytes)), (error, response) => {
+                    if (callback) callback(error, {{this.responseType}}.encode(this.writerFactory(), response).finish());
+                });
+                break;
         {{/each}}
-        };
+        }
     }
 {{#each methods}}
 
-    /**
-     * Calls {{@key}}
-     * @param request {{this.requestType}} message or plain object
-     * @param callback Node-style callback called with the error, if any, {{this.responseType}}
-     */
-    protected abstract {{@key}}(request: {{this.requestType}}, callback: (error: Error|null, response?: {{this.responseType}}) => void): void;
+    protected abstract {{@key}}(request: {{this.requestType}}, callback: (error: Error, response?: Partial<{{this.responseType}}>) => void): void;
 {{/each}}
 {{> selector }}
 }
@@ -360,10 +145,9 @@ export abstract class {{@key}} {
 /**
  * Properties of a {{@key}} message
  */
-{{#each fields}}
-{{else}}
+{{#empty fields}}
 // tslint:disable-next-line:no-empty-interface
-{{/each}}
+{{/empty}}
 export class {{@key}} {
 {{#each fields}}
 
@@ -371,74 +155,114 @@ export class {{@key}} {
      * {{@key}}
      */
 {{#is rule "repeated"}}
-    public {{@key}}?: {{memberType this}}[];
+    public {{@key}}?: {{memberType this}}[] = [];
 {{else}}
-    public {{@key}}?: {{memberType this}};
+    public {{@key}}?: {{memberType this}} = {{{defaultValue this}}};
 {{/is}}
 {{/each}}
 
-    /**
-     * Encodes the specified {{@key}} message
-     * @param message {{@key}} message or plain object to encode
-     * @param [writer] Writer to encode to
-     * @returns Writer
-     */
-    public static encode(message: {{@key}}, writer?: Writer): Writer {
+    constructor(props?: Partial<{{@key}}>) {
+        if (props) {
+        {{#each fields}}
+            this.{{@key}} = props.{{@key}};
+        {{/each}}
+        }
+    }
+
+    public static encode(writer: Writer, _partial: Partial<{{@key}}>): Writer {
+    {{#empty fields}}
+    {{else}}
+        const message = new {{@key}}(_partial);
+
+    {{/empty}}
     {{#each fields}}
-    {{#is rule "repeated"}}
-        if (message.{{@key}} !== null && message.{{@key}}.length) {
-            for (const item of message.newMessages) {
-            {{#isScalar this}}
-                writer.{{this.type}}(item);
-            {{else}}
-                {{memberType this}}.encode(item, writer);
-            {{/isScalar}}
+    {{#if keyType}}
+    {{#once}}
+        function keys<T>(obj: T) {
+            return Object.keys(obj) as Array<(keyof T)>;
+        }
+    {{/once}}
+        if (message.{{@key}} !== null) {
+            for (const key of keys(message.{{@key}})) {
+                writer.uint32({{wireKey "repeated" id}}).fork()
+                .uint32({{wireKey keyType 1}}).{{keyType}}(key)
+                .uint32({{wireKey type 2}}).{{wireType this}}(message.{{@key}}[key])
+                .ldelim();
             }
         }
     {{else}}
-        if (message.{{@key}} !== null && message.hasOwnProperty("{{@key}}")) {
-        {{#isScalar this}}
-            writer.{{this.type}}(message.{{@key}});
+        if (message.{{@key}} !== null) {
+        {{#is rule "repeated"}}
+        {{#if options.enum}}
+            writer.uint32({{wireKey "repeated" id}}).fork();
+            message.{{@key}}.forEach(item => {
+                writer.{{wireType this}}(item);
+            });
+            writer.ldelim();
         {{else}}
-            {{memberType this}}.encode(message.{{@key}}, writer);
+            message.{{@key}}.forEach(item => {
+            {{#isScalar this}}
+                writer.uint32({{wireKey "repeated" id}}).{{wireType this}}(item);
+            {{else}}
+                {{memberType this}}.encode(writer.uint32({{wireKey "embedded" id}}).fork(), item).ldelim();
+            {{/isScalar}}
+            });
+        {{/if}}
+        {{else}}
+        {{#isScalar this}}
+            writer.uint32({{wireKey type id}}).{{wireType this}}(message.{{@key}});
+        {{else}}
+            {{memberType this}}.encode(writer.uint32({{wireKey "embedded" id}}).fork(), message.{{@key}}).ldelim();
         {{/isScalar}}
+        {{/is}}
         }
-    {{/is}}
+    {{/if}}
     {{/each}}
 
         return writer;
     }
 
-    /**
-     * Decodes a {{@key}} message from the specified reader or buffer
-     * @param reader Reader to decode from
-     * @returns {{@key}}
-     * @throws {Error} If the payload is not a reader or valid buffer
-     * @throws {$protobuf.util.ProtocolError} If required fields are missing
-     */
-    public static decode(reader: Reader): {{@key}} {
+    public static decode(reader: Reader, length?: number): {{@key}} {
         const message = new {{@key}}();
-        while (reader.pos < reader.len) {
+        const end = length ? reader.pos + length : reader.len;
+
+        while (reader.pos < end) {
             const tag = reader.uint32();
             switch (tag >>> 3) {
             {{#each fields}}
                 case {{id}}:
+                {{#if keyType}}
+                    reader.skip().pos++;
+                    if (!message.{{@key}}) message.{{@key}} = {};
+                    const key = reader.{{keyType}}();
+                    reader.pos++;
+                    message.{{@key}}[key] = reader.{{wireType this}}();
+                {{else}}
                 {{#is rule "repeated"}}
-                    if (!(message.{{@key}} && message.{{@key}}.length)) {
-                        message.{{@key}} = [];
+                    if (!message.{{@key}}) message.{{@key}} = [];
+                {{#if options.enum}}
+                    if ((tag & 7) === 2) {
+                        while (reader.pos < (reader.uint32() + reader.pos)) {
+                            message.{{@key}}.push(reader.{{wireType this}}());
+                        }
+                    } else {
+                        message.{{@key}}.push(reader.{{wireType this}}());
                     }
-                {{#isScalar this}}
-                    message.{{@key}}.push(reader.{{type}}());
                 {{else}}
-                    message.{{@key}}.push({{memberType this}}.decode(reader));
+                {{#isScalar this}}
+                    message.{{@key}}.push(reader.{{wireType this}}());
+                {{else}}
+                    message.{{@key}}.push({{memberType this}}.decode(reader, reader.uint32()));
                 {{/isScalar}}
+                {{/if}}
                 {{else}}
                 {{#isScalar this}}
-                    message.{{@key}} = reader.{{type}}();
+                    message.{{@key}} = reader.{{wireType this}}();
                 {{else}}
-                    {{memberType this}}.decode(reader);
+                    message.{{@key}} = {{memberType this}}.decode(reader, reader.uint32());
                 {{/isScalar}}
                 {{/is}}
+                {{/if}}
                     break;
             {{/each}}
                 default:
@@ -446,6 +270,7 @@ export class {{@key}} {
                     break;
             }
         }
+
         return message;
     }
 }
@@ -465,10 +290,9 @@ export namespace {{@key}} {
 /**
  * {{@key}} enum
  */
-{{#each values}}
-{{else}}
+{{#empty values}}
 // tslint:disable-next-line:no-empty-interface
-{{/each}}
+{{/empty}}
 export enum {{@key}} {
 {{#each values}}
     {{@key}} = {{this}},
