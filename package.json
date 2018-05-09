@@ -1,6 +1,6 @@
 {
   "name": "protobuf-templates",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "Generate TypeScript code from proto files",
   "homepage": "https://github.com/thegecko/protobuf-templates",
   "author": "Rob Moran <rob@thegecko.org>",
