@@ -156,33 +156,37 @@ export function registerHelpers() {
     });
 
     registerHelper("defaultValue", function(field) {
-        // Map
-        if (field.keyType) return "{}";
 
         switch (field.type) {
+            case "double":
+            case "float":
+            case "int32":
+            case "int64":
+            case "uint32":
+            case "uint64":
+            case "sint32":
+            case "sint64":
+            case "fixed32":
+            case "fixed64":
+            case "sfixed32":
+            case "sfixed64":
+                return "0";
             case "string":
                 return "\"\"";
             case "bool":
-                return false;
+                return "false";
             case "bytes":
                 return "new Uint8Array(0)";
-            case "Any":
-            case "Timestamp":
-            case "Duration":
-            case "Struct":
-            case "Wrapper":
-            case "FieldMask":
-            case "ListValue":
-            case "Value":
-            case "NullValue":
-                return `new ${KNOWN_PREFIX}${field.type}()`;
         }
 
-        // Fully qualified known types
-        if (field.type.substr(0, KNOWN_PREFIX.length) === KNOWN_PREFIX) return `new ${field.type}()`;
+        // Map
+        if (field.keyType) return "{}";
 
-        // Default for numbers and enums
-        return 0;
+        // Enum
+        if (field.options.enum) return "0";
+
+        // Default
+        return "null";
     });
 
     registerHelper("wireKey", function(type, id) {
