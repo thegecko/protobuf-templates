@@ -123,7 +123,7 @@ export class {{@key}} implements Client {
      * @param readerFactory Function to return a Reader object similar to protobufjs.Reader
      * @param writerFactory Function to return a Writer object similar to protobufjs.Writer
      */
-    constructor(private rpcCaller: ((serviceName: string, methodName: string, request: Uint8Array, callback?: (error: string, response?: Uint8Array) => void) => void) public readerFactory: (bytes: Uint8Array) => Reader = null, public writerFactory: () => Writer = null) {
+    constructor(private rpcCaller: ((serviceName: string, methodName: string, request: Uint8Array, callback?: (error: string, response?: Uint8Array) => void) => void), public readerFactory: (bytes: Uint8Array) => Reader = null, public writerFactory: () => Writer = null) {
     }
 {{#each methods}}
 
