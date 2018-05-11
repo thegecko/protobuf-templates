@@ -7,6 +7,8 @@
 // tslint:disable:no-empty
 // tslint:disable:variable-name
 
+// import { Long } from "long";
+
 /** Wire format reader using `Uint8Array` if available, otherwise `Array`. */
 export interface Reader {
 
@@ -19,14 +21,14 @@ export interface Reader {
     uint32(): number;
     int32(): number;
     sint32(): number;
-    int64(): number; // Long;
-    uint64(): number; // Long;
-    sint64(): number; // Long;
+    // int64(): number; // Long;
+    // uint64(): number; // Long;
+    // sint64(): number; // Long;
     bool(): boolean;
     fixed32(): number;
     sfixed32(): number;
-    fixed64(): number; // Long;
-    sfixed64(): number; // Long;
+    // fixed64(): number; // Long;
+    // sfixed64(): number; // Long;
     float(): number;
     double(): number;
     bytes(): Uint8Array;
@@ -40,14 +42,14 @@ export interface Writer {
     uint32(value: number): Writer;
     int32(value: number): Writer;
     sint32(value: number): Writer;
-    uint64(value: (number|string)): Writer; // Long;
-    int64(value: (number|string)): Writer; // Long;
-    sint64(value: (number|string)): Writer; // Long;
+    // uint64(value: (number|string)): Writer; // Long;
+    // int64(value: (number|string)): Writer; // Long;
+    // sint64(value: (number|string)): Writer; // Long;
     bool(value: boolean): Writer;
     fixed32(value: number): Writer;
     sfixed32(value: number): Writer;
-    fixed64(value: (number|string)): Writer; // Long;
-    sfixed64(value: (number|string)): Writer; // Long;
+    // fixed64(value: (number|string)): Writer; // Long;
+    // sfixed64(value: (number|string)): Writer; // Long;
     float(value: number): Writer;
     double(value: number): Writer;
     bytes(value: (Uint8Array|string)): Writer;
@@ -71,6 +73,13 @@ export interface Writer {
      * @returns Finished buffer
      */
     finish(): Uint8Array;
+}
+
+export interface Service {
+    name: string;
+    readerFactory: (bytes: Uint8Array) => Reader;
+    writerFactory: () => Writer;
+    rpcHandler(methodName: string, bytes: Uint8Array, callback?: (error: string, response?: Uint8Array) => void): void;
 }
 
 {{#*inline "selector"}}
@@ -105,14 +114,16 @@ export namespace {{@key}} {
 {{#empty methods}}
 // tslint:disable-next-line:no-empty-interface
 {{/empty}}
-export abstract class {{@key}} {
+export abstract class {{@key}} implements Service {
+
+    public readonly name = "{{@key}}";
 
     /**
      * {{@key}} Constructor
      * @param readerFactory Function to return a Reader object similar to protobufjs.Reader
      * @param writerFactory Function to return a Writer object similar to protobufjs.Writer
      */
-    constructor(private readerFactory: (bytes: Uint8Array) => Reader, private writerFactory: () => Writer) {
+    constructor(public readerFactory: (bytes: Uint8Array) => Reader = null, public writerFactory: () => Writer = null) {
     }
 
     /**
@@ -121,7 +132,7 @@ export abstract class {{@key}} {
      * @param bytes The encoded protobuf message
      * @param callback Node-style callback function returned with an encoded protobuf response
      */
-    public rpcHandler(methodName: {{#each methods}}"{{@key}}"{{#unless @last}} | {{/unless}}{{/each}}, bytes: Uint8Array, callback?: (error: Error, response?: Uint8Array) => void): void {
+    public rpcHandler(methodName: {{#each methods}}"{{@key}}"{{#unless @last}} | {{/unless}}{{/each}}, bytes: Uint8Array, callback?: (error: string, response?: Uint8Array) => void): void {
         switch (methodName) {
         {{#each methods}}
             case "{{@key}}":
@@ -130,11 +141,14 @@ export abstract class {{@key}} {
                 });
                 break;
         {{/each}}
+            default:
+                if (callback) callback("Unknown method");
+                break;
         }
     }
 {{#each methods}}
 
-    protected abstract {{@key}}(request: {{this.requestType}}, callback: (error: Error, response?: Partial<{{this.responseType}}>) => void): void;
+    protected abstract {{@key}}(request: {{this.requestType}}, callback: (error: string, response?: Partial<{{this.responseType}}>) => void): void;
 {{/each}}
 {{> selector }}
 }
@@ -164,7 +178,7 @@ export class {{@key}} {
     constructor(props?: Partial<{{@key}}>) {
         if (props) {
         {{#each fields}}
-            this.{{@key}} = props.{{@key}};
+            if (props.{{@key}}) this.{{@key}} = props.{{@key}};
         {{/each}}
         }
     }
@@ -182,7 +196,7 @@ export class {{@key}} {
             return Object.keys(obj) as Array<(keyof T)>;
         }
     {{/once}}
-        if (message.{{@key}} !== null) {
+        if (message.{{@key}}) {
             for (const key of keys(message.{{@key}})) {
                 writer.uint32({{wireKey "repeated" id}}).fork()
                 .uint32({{wireKey keyType 1}}).{{keyType}}(key)
@@ -191,7 +205,7 @@ export class {{@key}} {
             }
         }
     {{else}}
-        if (message.{{@key}} !== null) {
+        if (message.{{@key}}) {
         {{#is rule "repeated"}}
         {{#if options.enum}}
             writer.uint32({{wireKey "repeated" id}}).fork();

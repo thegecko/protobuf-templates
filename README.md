@@ -90,6 +90,7 @@ The library currently supports all of the proto3 [scalar types](https://develope
 - [ ] google.protobuf.ListValue
 - [ ] google.protobuf.Value
 - [ ] google.protobuf.NullValue
+- [ ] Long
 
 ### Features
 
