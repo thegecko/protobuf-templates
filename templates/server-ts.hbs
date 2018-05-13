@@ -7,79 +7,24 @@
 // tslint:disable:no-empty
 // tslint:disable:variable-name
 
-// import { Long } from "long";
+{{#*inline "importer"}}
+{{#each nested}}
+{{#if methods}}
+import { EventEmitter } from "events";
+{{else}}
+{{> importer }}
+{{/if}}
+{{/each}}
+{{/inline}}
+{{> importer }}
 
-/** Wire format reader using `Uint8Array` if available, otherwise `Array`. */
-export interface Reader {
+{{> interfaces }}
 
-    /** Read buffer position. */
-    pos: number;
-
-    /** Read buffer length. */
-    len: number;
-
-    uint32(): number;
-    int32(): number;
-    sint32(): number;
-    // int64(): number; // Long;
-    // uint64(): number; // Long;
-    // sint64(): number; // Long;
-    bool(): boolean;
-    fixed32(): number;
-    sfixed32(): number;
-    // fixed64(): number; // Long;
-    // sfixed64(): number; // Long;
-    float(): number;
-    double(): number;
-    bytes(): Uint8Array;
-    string(): string;
-    skip(length?: number): Reader;
-    skipType(wireType: number): Reader;
-}
-
-/** Wire format writer using `Uint8Array` if available, otherwise `Array`. */
-export interface Writer {
-    uint32(value: number): Writer;
-    int32(value: number): Writer;
-    sint32(value: number): Writer;
-    // uint64(value: (number|string)): Writer; // Long;
-    // int64(value: (number|string)): Writer; // Long;
-    // sint64(value: (number|string)): Writer; // Long;
-    bool(value: boolean): Writer;
-    fixed32(value: number): Writer;
-    sfixed32(value: number): Writer;
-    // fixed64(value: (number|string)): Writer; // Long;
-    // sfixed64(value: (number|string)): Writer; // Long;
-    float(value: number): Writer;
-    double(value: number): Writer;
-    bytes(value: (Uint8Array|string)): Writer;
-    string(value: string): Writer;
-
-    /**
-     * Forks this writer's state by pushing it to a stack.
-     * Calling {@link Writer#reset|reset} or {@link Writer#ldelim|ldelim} resets the writer to the previous state.
-     * @returns `this`
-     */
-    fork(): Writer;
-
-    /**
-     * Resets to the last state and appends the fork state's current write length as a varint followed by its operations.
-     * @returns `this`
-     */
-    ldelim(): Writer;
-
-    /**
-     * Finishes the write operation.
-     * @returns Finished buffer
-     */
-    finish(): Uint8Array;
-}
-
-export interface Service {
+export interface Server {
     name: string;
     readerFactory: (bytes: Uint8Array) => Reader;
     writerFactory: () => Writer;
-    rpcHandler(methodName: string, bytes: Uint8Array, callback?: (error: string, response?: Uint8Array) => void): void;
+    rpcHandler(methodName: string): MethodStream<any, any>;
 }
 
 {{#*inline "selector"}}
@@ -95,6 +40,7 @@ export interface Service {
 {{/if}}
 {{/each}}
 {{/inline}}
+{{> selector }}
 
 {{#*inline "namespace"}}
 
@@ -114,7 +60,7 @@ export namespace {{@key}} {
 {{#empty methods}}
 // tslint:disable-next-line:no-empty-interface
 {{/empty}}
-export abstract class {{@key}} implements Service {
+export abstract class {{@key}} implements Server {
 
     public readonly name = "{{@key}}";
 
@@ -127,167 +73,101 @@ export abstract class {{@key}} implements Service {
     }
 
     /**
-     * Handle incoming rpc messages
+     * Handle incoming encoded rpc messages
      * @param methodName The method to invoke
-     * @param bytes The encoded protobuf message
-     * @param callback Node-style callback function returned with an encoded protobuf response
+     * @returns stream-like object to interract with
      */
-    public rpcHandler(methodName: {{#each methods}}"{{@key}}"{{#unless @last}} | {{/unless}}{{/each}}, bytes: Uint8Array, callback?: (error: string, response?: Uint8Array) => void): void {
+    public rpcHandler(methodName: {{#each methods}}"{{@key}}"{{#unless @last}} | {{/unless}}{{/each}}): MethodStream<any, any> {
+        let stream = null;
+
         switch (methodName) {
         {{#each methods}}
             case "{{@key}}":
-                this.{{@key}}({{this.requestType}}.decode(this.readerFactory(bytes)), (error, response) => {
-                    if (callback) callback(error, {{this.responseType}}.encode(this.writerFactory(), response).finish());
+                stream = new {{@key}}Stream(this.readerFactory, this.writerFactory);
+            {{#if requestStream}}
+            {{#if responseStream}}
+                this.{{@key}}(stream);
+            {{else}}
+                this.{{@key}}(stream, response => {
+                    stream.end(response);
                 });
+            {{/if}}
+            {{else}}
+            {{#if responseStream}}
+                stream.on("end", request => {
+                    this.{{@key}}(request, stream);
+                });
+            {{else}}
+                stream.on("end", request => {
+                    this.{{@key}}(request, response => {
+                        stream.end(response);
+                    });
+                });
+            {{/if}}
+            {{/if}}
                 break;
         {{/each}}
-            default:
-                if (callback) callback("Unknown method");
-                break;
         }
+
+        return stream;
     }
 {{#each methods}}
 
-    protected abstract {{@key}}(request: {{this.requestType}}, callback: (error: string, response?: Partial<{{this.responseType}}>) => void): void;
+{{#if requestStream}}
+{{#if responseStream}}
+    protected abstract {{@key}}(stream: ReadWriteStream<{{@key}}MethodStream, Partial<{{this.responseType}}>>): void;
+{{else}}
+    protected abstract {{@key}}(requestStream: ReadStream<{{@key}}MethodStream>, callback: (response?: Partial<{{this.responseType}}>) => void): void;
+{{/if}}
+{{else}}
+{{#if responseStream}}
+    protected abstract {{@key}}(request: {{this.requestType}}, responseStream: WriteStream<Partial<{{this.responseType}}>>): void;
+{{else}}
+    protected abstract {{@key}}(request: {{this.requestType}}, callback: (response?: Partial<{{this.responseType}}>) => void): void;
+{{/if}}
+{{/if}}
 {{/each}}
 {{> selector }}
 }
+{{#each methods}}
+
+export interface {{@key}}MethodStream {
+    data: {{this.requestType}};
+    end: {{this.requestType}};
+}
+
+export class {{@key}}Stream extends EventEmitter implements MethodStream<{{@key}}MethodStream, Partial<{{this.responseType}}>> {
+    constructor(private readerFactory: (bytes: Uint8Array) => Reader = null, private writerFactory: () => Writer = null) {
+        super();
+    }
+
+    public writeStream(data: Uint8Array) {
+        this.emit("data", {{this.requestType}}.decode(this.readerFactory(data)));
+    }
+
+    public endStream(data?: Uint8Array) {
+        if (!data) return this.emit("end");
+        this.emit("end", {{this.requestType}}.decode(this.readerFactory(data)));
+    }
+
+    public write(message: Partial<{{this.responseType}}>) {
+        message = new {{this.responseType}}(message);
+        this.emit("dataStream", {{this.responseType}}.encode(this.writerFactory(), message).finish());
+    }
+
+    public end(message?: Partial<{{this.responseType}}>) {
+        if (!message) return this.emit("endStream");
+
+        message = new {{this.responseType}}(message);
+        this.emit("endStream", {{this.responseType}}.encode(this.writerFactory(), message).finish());
+    }
+}
+{{/each}}
 {{/inline}}
 
 {{#*inline "type"}}
 
-/**
- * Properties of a {{@key}} message
- */
-{{#empty fields}}
-// tslint:disable-next-line:no-empty-interface
-{{/empty}}
-export class {{@key}} {
-{{#each fields}}
-
-    /**
-     * {{@key}}
-     */
-{{#is rule "repeated"}}
-    public {{@key}}?: {{memberType this}}[] = [];
-{{else}}
-    public {{@key}}?: {{memberType this}} = {{{defaultValue this}}};
-{{/is}}
-{{/each}}
-
-    constructor(props?: Partial<{{@key}}>) {
-        if (props) {
-        {{#each fields}}
-            if (props.{{@key}}) this.{{@key}} = props.{{@key}};
-        {{/each}}
-        }
-    }
-
-    public static encode(writer: Writer, _partial: Partial<{{@key}}>): Writer {
-    {{#empty fields}}
-    {{else}}
-        const message = new {{@key}}(_partial);
-
-    {{/empty}}
-    {{#each fields}}
-    {{#if keyType}}
-    {{#once}}
-        function keys<T>(obj: T) {
-            return Object.keys(obj) as Array<(keyof T)>;
-        }
-    {{/once}}
-        if (message.{{@key}}) {
-            for (const key of keys(message.{{@key}})) {
-                writer.uint32({{wireKey "repeated" id}}).fork()
-                .uint32({{wireKey keyType 1}}).{{keyType}}(key)
-                .uint32({{wireKey type 2}}).{{wireType this}}(message.{{@key}}[key])
-                .ldelim();
-            }
-        }
-    {{else}}
-        if (message.{{@key}}) {
-        {{#is rule "repeated"}}
-        {{#if options.enum}}
-            writer.uint32({{wireKey "repeated" id}}).fork();
-            message.{{@key}}.forEach(item => {
-                writer.{{wireType this}}(item);
-            });
-            writer.ldelim();
-        {{else}}
-            message.{{@key}}.forEach(item => {
-            {{#isScalar this}}
-                writer.uint32({{wireKey "repeated" id}}).{{wireType this}}(item);
-            {{else}}
-                {{memberType this}}.encode(writer.uint32({{wireKey "embedded" id}}).fork(), item).ldelim();
-            {{/isScalar}}
-            });
-        {{/if}}
-        {{else}}
-        {{#isScalar this}}
-            writer.uint32({{wireKey type id}}).{{wireType this}}(message.{{@key}});
-        {{else}}
-            {{memberType this}}.encode(writer.uint32({{wireKey "embedded" id}}).fork(), message.{{@key}}).ldelim();
-        {{/isScalar}}
-        {{/is}}
-        }
-    {{/if}}
-    {{/each}}
-
-        return writer;
-    }
-
-    public static decode(reader: Reader, length?: number): {{@key}} {
-        const message = new {{@key}}();
-        const end = length ? reader.pos + length : reader.len;
-
-        while (reader.pos < end) {
-            const tag = reader.uint32();
-            switch (tag >>> 3) {
-            {{#each fields}}
-                case {{id}}:
-                {{#if keyType}}
-                    reader.skip().pos++;
-                    if (!message.{{@key}}) message.{{@key}} = {};
-                    const key = reader.{{keyType}}();
-                    reader.pos++;
-                    message.{{@key}}[key] = reader.{{wireType this}}();
-                {{else}}
-                {{#is rule "repeated"}}
-                    if (!message.{{@key}}) message.{{@key}} = [];
-                {{#if options.enum}}
-                    if ((tag & 7) === 2) {
-                        while (reader.pos < (reader.uint32() + reader.pos)) {
-                            message.{{@key}}.push(reader.{{wireType this}}());
-                        }
-                    } else {
-                        message.{{@key}}.push(reader.{{wireType this}}());
-                    }
-                {{else}}
-                {{#isScalar this}}
-                    message.{{@key}}.push(reader.{{wireType this}}());
-                {{else}}
-                    message.{{@key}}.push({{memberType this}}.decode(reader, reader.uint32()));
-                {{/isScalar}}
-                {{/if}}
-                {{else}}
-                {{#isScalar this}}
-                    message.{{@key}} = reader.{{wireType this}}();
-                {{else}}
-                    message.{{@key}} = {{memberType this}}.decode(reader, reader.uint32());
-                {{/isScalar}}
-                {{/is}}
-                {{/if}}
-                    break;
-            {{/each}}
-                default:
-                    reader.skipType(tag & 7);
-                    break;
-            }
-        }
-
-        return message;
-    }
-}
+{{> messages }}
 {{#if nested}}
 
 /**
@@ -313,5 +193,3 @@ export enum {{@key}} {
 {{/each}}
 }
 {{/inline}}
-
-{{> selector }}

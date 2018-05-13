@@ -32,7 +32,7 @@ import { Transform } from "stream";
 import * as BufferStreams from "bufferstreams";
 import { compile } from "handlebars";
 import { Options } from "./options";
-import { registerHelpers } from "./helpers";
+import { registerPartials, registerHelpers } from "./extensions";
 
 const PLUGIN_NAME = "protobuf-templates";
 const TEMPLATE_EXT = ".hbs";
@@ -90,6 +90,11 @@ export = ({
 
         const path = findTemplate(template, ext);
         if (!path) return callback(`template not found: ${template}`);
+
+        registerPartials([
+            "interfaces",
+            "messages"
+        ], "ts");
 
         const root = new Root();
 
