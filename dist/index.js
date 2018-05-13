@@ -30,10 +30,10 @@ var through2_1 = require("through2");
 var PluginError = require("plugin-error");
 var BufferStreams = require("bufferstreams");
 var handlebars_1 = require("handlebars");
-var helpers_1 = require("./helpers");
+var extensions_1 = require("./extensions");
 var PLUGIN_NAME = "protobuf-templates";
 var TEMPLATE_EXT = ".hbs";
-helpers_1.registerHelpers();
+extensions_1.registerHelpers();
 function findTemplate(path, ext) {
     var known = path_1.resolve(__dirname, "..", "templates", path + "-" + ext + TEMPLATE_EXT);
     if (fs_1.existsSync(known))
@@ -81,6 +81,10 @@ module.exports = function (_a) {
         var path = findTemplate(template, ext);
         if (!path)
             return callback("template not found: " + template);
+        extensions_1.registerPartials([
+            "interfaces",
+            "messages"
+        ], "ts");
         var root = new protobufjs_1.Root();
         function createOutput() {
             root.resolveAll();

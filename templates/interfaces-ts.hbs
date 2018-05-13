@@ -1,0 +1,103 @@
+// import { Long } from "long";
+
+/**
+ * Wire format reader similar to similar to protobufjs.Reader
+ */
+export interface Reader {
+
+    /** Read buffer position. */
+    pos: number;
+
+    /** Read buffer length. */
+    len: number;
+
+    uint32(): number;
+    int32(): number;
+    sint32(): number;
+    // int64(): number; // Long;
+    // uint64(): number; // Long;
+    // sint64(): number; // Long;
+    bool(): boolean;
+    fixed32(): number;
+    sfixed32(): number;
+    // fixed64(): number; // Long;
+    // sfixed64(): number; // Long;
+    float(): number;
+    double(): number;
+    bytes(): Uint8Array;
+    string(): string;
+    skip(length?: number): Reader;
+    skipType(wireType: number): Reader;
+}
+
+/**
+ * Wire format writer similar to similar to protobufjs.Writer
+ */
+export interface Writer {
+    uint32(value: number): Writer;
+    int32(value: number): Writer;
+    sint32(value: number): Writer;
+    // uint64(value: (number|string)): Writer; // Long;
+    // int64(value: (number|string)): Writer; // Long;
+    // sint64(value: (number|string)): Writer; // Long;
+    bool(value: boolean): Writer;
+    fixed32(value: number): Writer;
+    sfixed32(value: number): Writer;
+    // fixed64(value: (number|string)): Writer; // Long;
+    // sfixed64(value: (number|string)): Writer; // Long;
+    float(value: number): Writer;
+    double(value: number): Writer;
+    bytes(value: (Uint8Array|string)): Writer;
+    string(value: string): Writer;
+
+    /**
+     * Forks this writer's state by pushing it to a stack.
+     * Calling {@link Writer#reset|reset} or {@link Writer#ldelim|ldelim} resets the writer to the previous state.
+     * @returns `this`
+     */
+    fork(): Writer;
+
+    /**
+     * Resets to the last state and appends the fork state's current write length as a varint followed by its operations.
+     * @returns `this`
+     */
+    ldelim(): Writer;
+
+    /**
+     * Finishes the write operation.
+     * @returns Finished buffer
+     */
+    finish(): Uint8Array;
+}
+
+/**
+ * Stream-like interface for read streams
+ */
+export interface ReadStream<T> {
+    on<K extends keyof T>(event: K, listener: (data: T[K]) => any): this;
+    once<K extends keyof T>(event: K, listener: (data: T[K]) => any): this;
+    addListener<K extends keyof T>(event: K, listener: (data: T[K]) => any): this;
+    removeListener<K extends keyof T>(event: K, listener: (data: T[K]) => any): this;
+}
+
+/**
+ * Stream-like interface for write streams
+ */
+export interface WriteStream<T> {
+    write(message: T);
+    end(message?: T);
+}
+
+/**
+ * Combined read/write stream-like object
+ */
+export interface ReadWriteStream<T, U> extends ReadStream<T>, WriteStream<U> {
+}
+
+/**
+ * Combined read/write stream-like object exposing raw byte access
+ */
+export interface MethodStream<T, U> extends ReadWriteStream<T, U> {
+    writeStream(data: Uint8Array);
+    endStream(data?: Uint8Array);
+}

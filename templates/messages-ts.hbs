@@ -1,0 +1,132 @@
+/**
+ * Properties of a {{@key}} message
+ */
+{{#empty fields}}
+// tslint:disable-next-line:no-empty-interface
+{{/empty}}
+export class {{@key}} {
+{{#each fields}}
+
+    /**
+     * {{@key}}
+     */
+{{#is rule "repeated"}}
+    public {{@key}}?: {{memberType this}}[] = [];
+{{else}}
+    public {{@key}}?: {{memberType this}} = {{{defaultValue this}}};
+{{/is}}
+{{/each}}
+
+    constructor(props?: Partial<{{@key}}>) {
+        if (props) {
+        {{#each fields}}
+            if (props.{{@key}}) this.{{@key}} = props.{{@key}};
+        {{/each}}
+        }
+    }
+
+    public static encode(writer: Writer, _partial: Partial<{{@key}}>): Writer {
+    {{#empty fields}}
+    {{else}}
+        const message = new {{@key}}(_partial);
+
+    {{/empty}}
+    {{#each fields}}
+    {{#if keyType}}
+    {{#once}}
+        function keys<T>(obj: T) {
+            return Object.keys(obj) as Array<(keyof T)>;
+        }
+    {{/once}}
+        if (message.{{@key}}) {
+            for (const key of keys(message.{{@key}})) {
+                writer.uint32({{wireKey "repeated" id}}).fork()
+                .uint32({{wireKey keyType 1}}).{{keyType}}(key)
+                .uint32({{wireKey type 2}}).{{wireType this}}(message.{{@key}}[key])
+                .ldelim();
+            }
+        }
+    {{else}}
+        if (message.{{@key}}) {
+        {{#is rule "repeated"}}
+        {{#if options.enum}}
+            writer.uint32({{wireKey "repeated" id}}).fork();
+            message.{{@key}}.forEach(item => {
+                writer.{{wireType this}}(item);
+            });
+            writer.ldelim();
+        {{else}}
+            message.{{@key}}.forEach(item => {
+            {{#isScalar this}}
+                writer.uint32({{wireKey "repeated" id}}).{{wireType this}}(item);
+            {{else}}
+                {{memberType this}}.encode(writer.uint32({{wireKey "embedded" id}}).fork(), item).ldelim();
+            {{/isScalar}}
+            });
+        {{/if}}
+        {{else}}
+        {{#isScalar this}}
+            writer.uint32({{wireKey type id}}).{{wireType this}}(message.{{@key}});
+        {{else}}
+            {{memberType this}}.encode(writer.uint32({{wireKey "embedded" id}}).fork(), message.{{@key}}).ldelim();
+        {{/isScalar}}
+        {{/is}}
+        }
+    {{/if}}
+    {{/each}}
+
+        return writer;
+    }
+
+    public static decode(reader: Reader, length?: number): {{@key}} {
+        const message = new {{@key}}();
+        const end = length ? reader.pos + length : reader.len;
+
+        while (reader.pos < end) {
+            const tag = reader.uint32();
+            switch (tag >>> 3) {
+            {{#each fields}}
+                case {{id}}:
+                {{#if keyType}}
+                    reader.skip().pos++;
+                    if (!message.{{@key}}) message.{{@key}} = {};
+                    const key = reader.{{keyType}}();
+                    reader.pos++;
+                    message.{{@key}}[key] = reader.{{wireType this}}();
+                {{else}}
+                {{#is rule "repeated"}}
+                    if (!message.{{@key}}) message.{{@key}} = [];
+                {{#if options.enum}}
+                    if ((tag & 7) === 2) {
+                        while (reader.pos < (reader.uint32() + reader.pos)) {
+                            message.{{@key}}.push(reader.{{wireType this}}());
+                        }
+                    } else {
+                        message.{{@key}}.push(reader.{{wireType this}}());
+                    }
+                {{else}}
+                {{#isScalar this}}
+                    message.{{@key}}.push(reader.{{wireType this}}());
+                {{else}}
+                    message.{{@key}}.push({{memberType this}}.decode(reader, reader.uint32()));
+                {{/isScalar}}
+                {{/if}}
+                {{else}}
+                {{#isScalar this}}
+                    message.{{@key}} = reader.{{wireType this}}();
+                {{else}}
+                    message.{{@key}} = {{memberType this}}.decode(reader, reader.uint32());
+                {{/isScalar}}
+                {{/is}}
+                {{/if}}
+                    break;
+            {{/each}}
+                default:
+                    reader.skipType(tag & 7);
+                    break;
+            }
+        }
+
+        return message;
+    }
+}

@@ -62,7 +62,7 @@ keepCase                Keeps field casing instead of converting to camel case
 
 - [x] TypeScript interface
 - [x] TypeScript abstract server class
-- [ ] TypeScript client class
+- [x] TypeScript client class
 - [ ] JavaScript abstract server class
 - [ ] JavaScript client class
 
@@ -96,5 +96,6 @@ The library currently supports all of the proto3 [scalar types](https://develope
 
 - [x] package (namespaces)
 - [x] default values
+- [x] streaming messages
 - [ ] Any
 - [ ] Oneof
